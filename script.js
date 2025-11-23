@@ -1171,3 +1171,19 @@ document.addEventListener("DOMContentLoaded", function() {
     }
   }
 });
+
+app.get("/api/test-db", async (req, res) => {
+  try {
+    // Check connection
+    const result = await pool.query("SELECT COUNT(*) FROM recipes");
+    
+    // Send response
+    res.json({
+      message: "Database connected successfully!",
+      recipes_count: result.rows[0].count
+    });
+  } catch (err) {
+    console.error("Database test error:", err);
+    res.json({ error: err.message || "Unknown error" });
+  }
+});
