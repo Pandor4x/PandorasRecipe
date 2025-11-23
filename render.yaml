@@ -1,0 +1,25 @@
+# Render service spec (adjust region, plan, and env vars as needed)
+services:
+  - type: web_service
+    name: pandorax-backend
+    env: node
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: cd backend; npm install
+    startCommand: cd backend; node index.js
+
+  - type: static_site
+    name: pandorax-frontend
+    env: static
+    plan: free
+    region: oregon
+    rootDir: frontend
+    # No build step required for plain static HTML/CSS/JS; adjust if you add a build tool
+    publishPath: /
+
+# Notes:
+# - Do NOT store secrets in this file. Configure DB credentials and JWT_SECRET in the
+#   Render Dashboard (Environment > Environment Variables) for the backend service.
+# - If you prefer an automated deploy with a different branch, add 'branch: <name>'
+#   under the relevant service block.
