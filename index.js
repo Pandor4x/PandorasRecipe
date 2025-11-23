@@ -16,10 +16,29 @@ app.use(bodyParser.json({ limit: '10mb' }));
 app.use(bodyParser.urlencoded({ limit: '10mb', extended: true }));
 
 // ---------- PostgreSQL Setup ----------
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false } // Required for Render PostgreSQL
-});
+// Prefer DATABASE_URL (e.g., on Render). For local dev use individual env vars.
+let pool;
+// Enable SSL only if DB_SSL env var is explicitly set to 'true'.
+const useSsl = process.env.DB_SSL === 'true';
+if (process.env.DATABASE_URL) {
+  const cfg = {
+    connectionString: process.env.DATABASE_URL,
+    ssl: useSsl ? { rejectUnauthorized: false } : false
+  };
+  console.log('Using DATABASE_URL. DB cfg:', { host: process.env.DB_HOST, ssl: useSsl });
+  pool = new Pool(cfg);
+} else {
+  const cfg = {
+    user: process.env.DB_USER,
+    host: process.env.DB_HOST,
+    database: process.env.DB_DATABASE,
+    password: process.env.DB_PASSWORD,
+    port: Number(process.env.DB_PORT) || 5432,
+    ssl: useSsl ? { rejectUnauthorized: false } : false
+  };
+  console.log('Using individual DB vars. DB cfg:', { host: cfg.host, ssl: useSsl });
+  pool = new Pool(cfg);
+}
 
 pool.connect()
   .then(() => console.log('Connected to PostgreSQL'))
