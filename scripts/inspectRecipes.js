@@ -1,4 +1,4 @@
-const pool = require('../models/db');
+﻿const pool = require('../models/db');
 (async function(){
   try {
     const r = await pool.query('SELECT count(*) AS c FROM public.recipes');
