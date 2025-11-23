@@ -151,6 +151,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
   <script src="firebase.js"></script>
 <script>
+const API_URL = 'https://pandorasrecipe.onrender.com';
 const contactForm = document.getElementById('contactForm');
 const formMessage = document.getElementById('formMessage');
 
@@ -168,7 +169,7 @@ contactForm.addEventListener('submit', async function(e) {
   }
 
   try {
-    const res = await fetch("http://localhost:5000/api/contact", {
+    const res = await fetch(`${API_URL}/api/contact`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, email, message, timestamp: Date.now() })
