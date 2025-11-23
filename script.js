@@ -7,6 +7,8 @@ let selectedCategory = "";
 let imageDataUrl = "";
 let userFavorites = new Set();
 let latestFavorites = null; // holds last-fetched favorites list when viewing favorites
+// API base for all frontend requests
+const API_URL = "https://pandorasrecipe.onrender.com";
 
 // Elements
 const recipeForm = document.getElementById("recipeForm");
@@ -72,7 +74,7 @@ function showSection(section) {
 // Fetch recipes from backend
 async function fetchRecipes(category = "") {
   try {
-    const url = category ? `/api/recipes?category=${encodeURIComponent(category)}` : "/api/recipes";
+    const url = category ? `${API_URL}/api/recipes?category=${encodeURIComponent(category)}` : `${API_URL}/api/recipes`;
     const res = await fetch(url, {
       headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
     });
@@ -88,7 +90,7 @@ async function loadUserFavorites() {
   const token = localStorage.getItem('token');
   if (!token) { userFavorites = new Set(); return; }
   try {
-    const res = await fetch('/api/favorites/ids', { headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API_URL}/api/favorites/ids`, { headers: { 'Authorization': `Bearer ${token}` } });
     if (!res.ok) { userFavorites = new Set(); return; }
     const data = await res.json();
     userFavorites = new Set((data.ids || []));
@@ -101,7 +103,7 @@ async function loadUserFavorites() {
 // Add recipe
 async function addRecipe(recipeData) {
   try {
-    const res = await fetch("/api/recipes", {
+    const res = await fetch(`${API_URL}/api/recipes`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -133,7 +135,7 @@ async function addRecipe(recipeData) {
 // Update recipe
 async function updateRecipe(id, recipeData) {
   try {
-    const res = await fetch(`/api/recipes/${id}`, {
+    const res = await fetch(`${API_URL}/api/recipes/${id}`, {
       method: "PUT",
       headers: {
         "Content-Type": "application/json",
@@ -151,7 +153,7 @@ async function updateRecipe(id, recipeData) {
 async function deleteRecipe(id) {
   if (!confirm("Are you sure you want to delete this recipe?")) return;
   try {
-    const res = await fetch(`/api/recipes/${id}`, {
+    const res = await fetch(`${API_URL}/api/recipes/${id}`, {
       method: "DELETE",
       headers: {
         "Authorization": `Bearer ${localStorage.getItem("token")}`
@@ -276,7 +278,7 @@ async function renderFavorites(recipes = null) {
   if (!recipes) {
     // try to load from server
     try {
-      const res = await fetch('/api/favorites', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+      const res = await fetch(`${API_URL}/api/favorites`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
       if (!res.ok) return;
       recipes = await res.json();
     } catch (e) { console.error('Failed to fetch favorites', e); return; }
@@ -336,7 +338,7 @@ window.toggleFavorite = async function(recipeId) {
   try {
     const token = localStorage.getItem('token');
     if (!token) return alert('Please log in to favorite recipes.');
-    const res = await fetch(`/api/favorites/${recipeId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+    const res = await fetch(`${API_URL}/api/favorites/${recipeId}`, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
     let data;
     try { data = await res.json(); } catch(e) { data = null; }
     if (!res.ok) {
@@ -610,7 +612,7 @@ favoritesBtn?.addEventListener('click', async () => {
   showSection(homeSection);
   try {
     await loadUserFavorites();
-    const res = await fetch('/api/favorites', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+    const res = await fetch(`${API_URL}/api/favorites`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
     if (!res.ok) {
       // try to parse json error message
       let bodyText = '';
@@ -661,7 +663,7 @@ document.addEventListener('click', (e) => {
     // reload favorites from server and then filter
     (async () => {
       await loadUserFavorites();
-      const res = await fetch('/api/favorites', { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
+      const res = await fetch(`${API_URL}/api/favorites`, { headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` } });
       if (!res.ok) {
         let body = '';
         try { body = JSON.stringify(await res.json()); } catch(e){ body = await res.text().catch(()=> ''); }
@@ -845,7 +847,7 @@ imageInput?.addEventListener("change", function() {
         showSpinner('Uploading image...');
         const form = new FormData();
         form.append('image', blob, file.name || 'upload.jpg');
-        const uploadRes = await fetch('/api/upload', {
+        const uploadRes = await fetch(`${API_URL}/api/upload`, {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
           body: form
@@ -1089,7 +1091,7 @@ if (loginForm && signupForm && authMessage) {
     const password = document.getElementById("loginPassword").value;
 
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
@@ -1122,7 +1124,7 @@ if (loginForm && signupForm && authMessage) {
     const password = document.getElementById("signupPassword").value;
 
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password })
