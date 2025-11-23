@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PandoraX Recipe Book</title>
+  <link rel="stylesheet" href="style.css">
+<style>
+  .category-slideshow {
+    position: relative;
+    max-width: 1600px;
+    margin: 0 auto 10px auto;
+    height: 400px;
+    overflow: hidden;
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.13);
+    background: #fff;
+    margin-top: 10px;
+  }
+  .category-slideshow .slides {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  .category-slideshow .slide {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    transition: opacity 0.5s;
+    cursor: pointer;
+    border-radius: 18px;
+  }
+  .category-slideshow .slide.active {
+    opacity: 1;
+    z-index: 2;
+  }
+  .category-slideshow .slide-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(58,58,58,0.7);
+    color: #fff;
+    border: none;
+    font-size: 2.5rem;
+    padding: 0 18px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 3;
+    user-select: none;
+  }
+  .category-slideshow .slide-btn.prev { left: 18px; }
+  .category-slideshow .slide-btn.next { right: 18px; }
+  .category-slideshow .slide-caption {
+    position: absolute;
+    bottom: 28px;
+    left: 38px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    padding: 14px 32px;
+    border-radius: 12px;
+    font-size: 2rem;
+    font-weight: bold;
+    z-index: 4;
+    letter-spacing: 1px;
+  }
+  /* Themed search input used in Recipes header */
+  .header-search {
+    max-width: 520px;
+    width: 60%;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 2px solid rgba(255,152,0,0.15);
+    box-shadow: 0 6px 20px rgba(255,152,0,0.06);
+    font-size: 1rem;
+    outline: none;
+    transition: box-shadow 0.15s ease, border-color 0.15s ease, transform 0.08s ease;
+    background: linear-gradient(180deg, #fff, #fff);
+    color: #333;
+  }
+  .header-search::placeholder { color: #b88a58; }
+  .header-search:focus {
+    border-color: var(--accent, #ff9800);
+    box-shadow: 0 8px 30px rgba(255,152,0,0.16);
+    transform: translateY(-1px);
+  }
+  .sort-select {
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: #fff;
+    font-weight:600;
+    color:#333;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+  }
+  .sort-select:focus { outline: none; border-color: var(--accent, #ff9800); box-shadow: 0 8px 20px rgba(255,152,0,0.12); }
+  #recipeGridContainer {
+    margin-top: 56px;
+    margin-bottom: 32px;
+  }
+  #homeRecipeList {
+    max-width: 1600px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 38px;
+  }
+  .recipe-card {
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.10);
+    padding: 24px 18px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    font-size: 1.25rem;
+    min-height: 180px;
+    cursor: pointer;
+    transition: box-shadow 0.2s;
+    width: 700px;
+  }
+  /* Flip card styles for trending cards */
+  .flip-card { perspective: 1000px; }
+  .flip-card-inner { position: relative; width: 100%; height: 100%; transition: transform 0.6s; transform-style: preserve-3d; }
+  .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+  .flip-card-front, .flip-card-back { position: relative; backface-visibility: hidden; width: 100%; }
+  .flip-card-back { position: absolute; top:0; left:0; transform: rotateY(180deg); padding: 18px; box-sizing:border-box; }
+  .trending-list { display:flex; gap:16px; flex-wrap:wrap; justify-content:flex-start; }
+  .trending-list .recipe-card { width: 300px; min-height: 220px; display:flex; flex-direction:column; }
+  .trending-title { margin: 8px 0; color:#333; font-size:1.3rem; }
+  .recipe-card .card-buttons { display:flex; gap:8px; margin-top:12px; }
+  .btn { padding:8px 12px; border-radius:8px; border:none; cursor:pointer; font-weight:600; }
+  .btn.view { background:#ff9800; color:#fff; }
+  .btn.fav { background:#eee; color:#333; }
+  .btn.fav.favorited { background:var(--accent,#ff9800); color:#fff; }
+  .recipe-card:hover {
+    box-shadow: 0 6px 24px rgba(255,152,0,0.15);
+  }
+  .recipe-img-side {
+    width: 400px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 1px 8px rgba(0,0,0,0.08);
+  }
+  .recipe-details-side h3 {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+    color: #ff9800;
+    width: 300px;
+  }
+  .recipe-meta {
+    font-size: 1.15rem;
+    color: #444;
+  }
+  @media (max-width: 900px) {
+    .category-slideshow { max-width: 98vw; height: 220px; }
+    #homeRecipeList { max-width: 98vw; grid-template-columns: 1fr; gap: 22px; }
+    .recipe-card { flex-direction: column; align-items: flex-start; min-height: 120px; }
+    .recipe-img-side { width: 100%; height: 120px; }
+    .category-slideshow .slide-caption { font-size: 1.2rem; left: 18px; bottom: 12px; padding: 8px 18px; }
+  }
+
+  .site-title {
+  font-size: 2.2rem;
+  font-weight: bold;
+  color: #ff9800;
+  text-decoration: none;
+  transition: color 0.2s;
+  display: inline-block;
+  margin-bottom: 6px;
+}
+.site-title:hover {
+  color: #e65100;
+  text-decoration: none;
+}
+@media (max-width: 700px) {
+  .site-title {
+    font-size: 1.4rem;
+  }
+}
+
+/* Favorite heart styles */
+.heart { color: #bbb; font-size: 1.25rem; transition: color 0.15s ease; }
+.heart.favorited { color: var(--accent, #ff9800); text-shadow: 0 1px 0 rgba(0,0,0,0.08); }
+.fav-btn { background: transparent; border: none; padding: 6px; cursor: pointer; }
+/* spacing for heart next to badge */
+.card-header .fav-btn { margin-right: 8px; vertical-align: middle; }
+
+/* Category buttons (favorites + recipes) matching site theme */
+.favCategoryBtn, .categoryFilterBtn {
+  background: var(--accent, #ff9800);
+  color: #fff;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  transition: transform 0.08s ease, box-shadow 0.12s ease, filter 0.08s ease;
+}
+.favCategoryBtn:hover, .categoryFilterBtn:hover { filter: brightness(0.95); }
+.favCategoryBtn.active, .categoryFilterBtn.active {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(255,152,0,0.18);
+}
+
+/* Small screen adjustments */
+@media (max-width: 700px) {
+  .favCategoryBtn, .categoryFilterBtn { padding: 8px 10px; font-size: 0.95rem; }
+}
+
+/* Recipes category button style reuse */
+.categoryFilterBtn { margin: 0 4px; }
+
+
+</style>
+</head>
+
+<body>
+  <header>
+  <div class="header-left">
+    <button id="menuToggle" class="menu-btn">☰</button>
+  </div>
+  <div class="header-center">
+    <a href="index.html" class="site-title">
+      Pandora's Recipes
+    </a>
+  </div>
+  <div class="header-right">
+    <span id="userInfoSpan" style="margin-right:12px;color:#ff9800;font-weight:bold;"></span>
+    <button id="recipesBtn">Recipes</button>
+    <button id="favoritesBtn">Favorites</button>
+    <button id="loginBtn">Log In</button>
+  </div>
+</header>
+
+  <!-- Floating Sidebar Menu -->
+  <div id="floatingSidebar" class="floating-sidebar" style="display:none;">
+    <h3>Categories</h3>
+    <ul>
+      <li><button class="categoryBtn" data-category="Breakfast">Breakfast</button></li>
+      <li><button class="categoryBtn" data-category="Lunch">Lunch</button></li>
+      <li><button class="categoryBtn" data-category="Dinner">Dinner</button></li>
+      <li><button class="categoryBtn" data-category="Desserts">Desserts</button></li>
+    </ul>
+  </div>
+
+    <!-- Home Section -->
+    <section id="homeSection" class="main-section">
+  <main>
+<!-- Slideshow Container (will hide when category selected) -->
+<div id="slideshowContainer">
+  <!-- Dynamic slideshow showing up to 10 random uploaded recipe images -->
+  <div class="category-slideshow" id="categorySlideshow" style="height:360px;">
+    <div class="slides" id="homeDynamicSlides">
+      <!-- slides inserted here by script.js -->
+    </div>
+    <button class="slide-btn prev">&#10094;</button>
+    <button class="slide-btn next">&#10095;</button>
+    <div class="slide-caption" id="homeSlideCaption" style="display:none;"></div>
+  </div>
+</div>
+
+  <!-- Favorites Header (hidden until using Favorites) -->
+  <div id="favoritesHeaderContainer" style="display:none; text-align:center; margin: 24px 0;">
+    <h2 style="font-size:2.2rem; color:#ff9800; margin-bottom:12px;">Favorites</h2>
+    <div style="display:flex; justify-content:center; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
+      <div id="favoritesCategoryButtons" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <button class="favCategoryBtn" data-category="">All</button>
+        <button class="favCategoryBtn" data-category="Breakfast">Breakfast</button>
+        <button class="favCategoryBtn" data-category="Lunch">Lunch</button>
+        <button class="favCategoryBtn" data-category="Dinner">Dinner</button>
+        <button class="favCategoryBtn" data-category="Desserts">Desserts</button>
+      </div>
+      <div style="margin-left:8px;">
+        <label for="favSortSelect" style="font-weight:600; margin-right:6px; color:#444;">Sort by</label>
+        <select id="favSortSelect" class="sort-select">
+          <option value="none">Default</option>
+          <option value="asc">Alphabetical A → Z</option>
+          <option value="desc">Alphabetical Z → A</option>
+        </select>
+      </div>
+    </div>
+  <div id="favoritesList" style="display:flex; flex-wrap:wrap; gap:16px; justify-content:center; max-width:1600px; margin:0 auto 12px auto;"></div>
+  </div>
+
+<!-- Category Title (will show when category selected) -->
+<div id="categoryTitleContainer" style="display:none;">
+  <h2 id="categoryTitle" style="font-size:2.5rem; color:#ff9800; text-align:center; margin:40px 0; font-weight:bold; letter-spacing:1px;"></h2>
+  <button id="clearCategoryBtn" style="display:block; margin:0 auto 24px auto; background:#ff9800; color:#fff; border:none; padding:10px 20px; border-radius:6px; font-weight:bold; cursor:pointer;">← Back to All</button>
+</div>
+
+  <!-- Admin Add Recipe Button (visible to admins on home) -->
+  <div id="adminButtonContainer" style="text-align:center; margin:24px 0; display:none;">
+    <button id="addRecipeBtn" style="background:#ff9800; color:#fff; border:none; padding:12px 24px; border-radius:6px; font-weight:bold; cursor:pointer; font-size:1rem;">Add New Recipe</button>
+  </div>
+
+  <!-- Recipe Grid Container -->
+  <div id="recipeGridContainer">
+    <!-- Trending rows (4 rows x 5 cards) -->
+    <div id="trendingContainer" style="max-width:1600px; margin: 12px auto; display:flex; flex-direction:column; gap:28px;">
+      <div class="trending-row">
+        <h3 class="trending-title">Breakfast Trending Recipes</h3>
+        <div class="trending-list" id="trendingBreakfast"></div>
+      </div>
+      <div class="trending-row">
+        <h3 class="trending-title">Lunch Trending Recipes</h3>
+        <div class="trending-list" id="trendingLunch"></div>
+      </div>
+      <div class="trending-row">
+        <h3 class="trending-title">Dinner Trending Recipes</h3>
+        <div class="trending-list" id="trendingDinner"></div>
+      </div>
+      <div class="trending-row">
+        <h3 class="trending-title">Desserts Trending Recipes</h3>
+        <div class="trending-list" id="trendingDesserts"></div>
+      </div>
+    </div>
+    <!-- Legacy home list (kept hidden) -->
+    <div id="homeRecipeList" style="display:none;"></div>
+  </div>
+    </section>
+
+    <!-- Recipe Section -->
+<section id="recipesSection" style="display:none; flex-direction:column; align-items:center;">
+
+  <!-- Recipes header (hidden until viewing Recipes) -->
+  <div id="recipesHeaderContainer" style="display:none; text-align:center; margin: 24px 0;">
+    <h2 style="font-size:2.2rem; color:#ff9800; margin-bottom:12px;">Recipes</h2>
+    <input type="text" id="headerSearchInput" class="header-search" placeholder="Search recipes..." style="margin-bottom: 20px;">
+    <!-- Recipes category buttons (appear when viewing Recipes) -->
+    <div style="display:flex; justify-content:center; gap:12px; align-items:center; flex-wrap:wrap;">
+    <div id="recipesCategoryButtons" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+      <button class="categoryFilterBtn" data-category="">All</button>
+      <button class="categoryFilterBtn" data-category="Breakfast">Breakfast</button>
+      <button class="categoryFilterBtn" data-category="Lunch">Lunch</button>
+      <button class="categoryFilterBtn" data-category="Dinner">Dinner</button>
+      <button class="categoryFilterBtn" data-category="Desserts">Desserts</button>
+    </div>
+    <div style="margin-left:8px;">
+      <label for="recipesSortSelect" style="font-weight:600; margin-right:6px; color:#444;">Sort by</label>
+      <select id="recipesSortSelect" class="sort-select">
+        <option value="none">Default</option>
+        <option value="asc">Alphabetical A → Z</option>
+        <option value="desc">Alphabetical Z → A</option>
+      </select>
+    </div>
+    </div>
+  </div>
+
+  <!-- Admin Button to Add Recipe -->
+  <div id="adminButtonContainer" style="display:none; margin-bottom: 20px;">
+    <button id="addRecipeBtn" style="background:#ff9800; color:#fff; border:none; padding:10px 20px; border-radius:6px; cursor:pointer;">
+      Add Recipe
+    </button>
+  </div>
+
+  <!-- Recipes Grid -->
+  <div id="recipeList" style="display:flex; flex-wrap:wrap; gap:16px; justify-content:center; width: 1600px; max-width: 1600px;"></div>
+</section>
+
+    <!-- Make Recipe Section (moved out so showSection can display it directly) -->
+    <section id="makeRecipeSection" class="main-section" style="display:none; flex-direction:column; width:90%; max-width:700px; margin:30px auto;">
+      <form id="recipeForm">
+        <label for="title">Title</label>
+        <input type="text" id="title" required>
+
+        <label for="description">Description</label>
+        <textarea id="description"></textarea>
+
+        <label for="ingredients">Ingredients</label>
+        <textarea id="ingredients" required></textarea>
+
+        <label for="instructions">Instructions</label>
+        <textarea id="instructions" required></textarea>
+
+        <label for="category">Category</label>
+        <select id="category" required>
+          <option value="">Select Category</option>
+          <option value="Breakfast">Breakfast</option>
+          <option value="Lunch">Lunch</option>
+          <option value="Dinner">Dinner</option>
+          <option value="Desserts">Desserts</option>
+        </select>
+
+        <label>
+          <input type="checkbox" id="favoriteCheckbox"> Mark as Favorite
+        </label>
+
+        <label for="imageInput">Recipe Image</label>
+        <input type="file" id="imageInput" accept="image/*">
+        <img id="previewImage" src="" alt="Preview" style="display:none; max-width:200px; margin-top:10px; border-radius:6px;">
+
+        <button type="submit" style="margin-top:15px; background:#ff9800; color:#fff; border:none; padding:10px; border-radius:6px; cursor:pointer;">
+          Save Recipe
+        </button>
+      </form>
+    </section>
+
+  <!-- Homepage Recipe List (single instance kept above) -->
+  </main>
+
+  <footer>
+    <div class="footer-links">
+      <a href="about.html">About Us</a>
+      <span>|</span>
+      <a href="terms.html">Terms of Service</a>
+      <span>|</span>
+      <a href="contact.html">Contact Us</a>
+      <span>|</span>
+      <a href="privacy.html">Privacy Policy</a>
+    </div>
+  </footer>
+
+  <!-- main script -->
+  <script src="script.js"></script>
+  <script>
+    // Slideshow logic
+    const slides = document.querySelectorAll('.slide');
+    const captions = document.querySelectorAll('.slide-caption');
+    let currentSlide = 0;
+
+    function showSlide(idx) {
+      slides.forEach((slide, i) => {
+        slide.classList.toggle('active', i === idx);
+        captions[i].style.display = i === idx ? 'block' : 'none';
+      });
+      currentSlide = idx;
+    }
+
+    document.querySelector('.slide-btn.prev').onclick = function() {
+      showSlide((currentSlide - 1 + slides.length) % slides.length);
+    };
+    document.querySelector('.slide-btn.next').onclick = function() {
+      showSlide((currentSlide + 1) % slides.length);
+    };
+
+    slides.forEach((slide, i) => {
+      // Use capture:true so we intercept the click before any ancestor handlers
+      slide.addEventListener('click', function(e) {
+        // Prevent any default navigation or parent handlers
+        if (e && e.preventDefault) e.preventDefault();
+        if (e && e.stopPropagation) e.stopPropagation();
+        if (e && e.stopImmediatePropagation) e.stopImmediatePropagation();
+        // Instead of navigating away, filter the homepage by category
+        const category = slide.getAttribute('data-category');
+        // set selectedCategory defined in script.js
+        if (typeof selectedCategory !== 'undefined') {
+          selectedCategory = category;
+            // Keep slideshow visible; only apply the filter to the recipe grid below
+            // (Do not hide slideshowContainer or show categoryTitleContainer)
+          // highlight matching sidebar/category button if present
+          try {
+            document.querySelectorAll('.categoryBtn').forEach(b => b.classList.remove('active'));
+            const match = document.querySelector(`.categoryBtn[data-category="${CSS && CSS.escape ? CSS.escape(category) : category}"]`);
+            if (match) match.classList.add('active');
+          } catch (err) {
+            document.querySelectorAll('.categoryBtn').forEach(b => {
+              if (b.dataset && b.dataset.category === category) b.classList.add('active');
+            });
+          }
+          // Optionally hide the floating sidebar if open
+          const fs = document.getElementById('floatingSidebar');
+          if (fs) fs.style.display = 'none';
+          // call render (script.js exposes renderHomeRecipes)
+          if (typeof renderHomeCategory === 'function') {
+            console.log('Slideshow clicked - applying category filter:', category);
+            renderHomeCategory(category);
+          }
+        }
+        return false;
+      }, true); // capture phase
+    });
+
+    showSlide(0);
+  </script>
+</body>
+</html>
