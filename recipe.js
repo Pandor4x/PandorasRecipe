@@ -1,4 +1,5 @@
 // Backend-driven recipe detail page (uses REST API instead of Firebase)
+const API_URL = "https://pandorasrecipe.onrender.com";
 function getRecipeId() {
   const params = new URLSearchParams(window.location.search);
   return params.get('id');
@@ -9,7 +10,7 @@ if (!recipeId) window.location.href = 'index.html';
 
 async function fetchRecipe(id) {
   try {
-    const res = await fetch(`/api/recipes/${id}`);
+    const res = await fetch(`${API_URL}/api/recipes/${id}`);
     if (!res.ok) throw new Error('Recipe not found');
     return await res.json();
   } catch (err) {
@@ -92,7 +93,7 @@ async function loadRecipe() {
       const uid = currentUser.id;
       const rating = Number(this.dataset.star);
       try {
-        const res = await fetch(`/api/recipes/${recipeId}/rate`, {
+        const res = await fetch(`${API_URL}/api/recipes/${recipeId}/rate`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uid, rating })
@@ -135,7 +136,7 @@ async function loadRecipe() {
       if (!confirm('Are you sure you want to delete this recipe?')) return;
       try {
         const token = localStorage.getItem('token');
-        const res = await fetch(`/api/recipes/${recipeId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
+        const res = await fetch(`${API_URL}/api/recipes/${recipeId}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || 'Delete failed');
         window.location.href = 'index.html';
@@ -161,7 +162,7 @@ document.getElementById('reviewForm').addEventListener('submit', async function(
   if (!text) return;
 
   try {
-    const res = await fetch(`/api/recipes/${recipeId}/reviews`, {
+    const res = await fetch(`${API_URL}/api/recipes/${recipeId}/reviews`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uid, reviewer, text, rating })
@@ -219,7 +220,7 @@ document.getElementById("saveDescriptionBtn")?.addEventListener("click", functio
   (async () => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/recipes/${recipeId}`, {
+      const res = await fetch(`${API_URL}/api/recipes/${recipeId}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ description: newDescription })
